@@ -56,21 +56,21 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
   const loadTaskReportData = async (taskId: string) => {
     setIsLoading(true);
     try {
-      // Load task report
-      const { data: reportData } = await supabase
+      // Load task report (may not exist yet)
+      const { data: reportData, error: reportError } = await supabase
         .from("task_reports")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setTaskReport(reportData);
+      setTaskReport(reportData || null);
 
-      // Load checklist
-      const { data: checklistData } = await supabase
+      // Load checklist (may not exist yet)
+      const { data: checklistData, error: checklistError } = await supabase
         .from("task_checklists")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setChecklist(checklistData);
+      setChecklist(checklistData || null);
 
       if (checklistData) {
         // Load checklist items
@@ -89,6 +89,9 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
             .eq("report_id", reportData.id);
           setReportChecklistItems(reportItemsData || []);
         }
+      } else {
+        setChecklistItems([]);
+        setReportChecklistItems([]);
       }
 
       // Load evidence submissions
@@ -107,20 +110,16 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
         .order("created_at", { ascending: false });
       setIssues(issuesData || []);
 
-      // Load evidence requirements
-      const { data: requirementsData } = await supabase
+      // Load evidence requirements (may not exist yet)
+      const { data: requirementsData, error: requirementsError } = await supabase
         .from("task_evidence_requirements")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setEvidenceRequirements(requirementsData);
+      setEvidenceRequirements(requirementsData || null);
     } catch (error) {
       console.error("Error loading report data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load report data",
-        variant: "destructive",
-      });
+      // Don't show error toast for missing data - it's expected that reports may not exist yet
     } finally {
       setIsLoading(false);
     }
