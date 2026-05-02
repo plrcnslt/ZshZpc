@@ -151,3 +151,84 @@ export interface TaskMessageAttachment {
   attachment_id: string
   created_at: string
 }
+
+// ============================================================================
+// REPORTS FEATURE TYPES
+// ============================================================================
+
+export interface TaskChecklist {
+  id: string
+  task_id: string
+  title: string
+  description: string | null
+  is_required: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskChecklistItem {
+  id: string
+  checklist_id: string
+  label: string
+  description: string | null
+  display_order: number
+  created_at: string
+}
+
+export interface TaskEvidenceRequirement {
+  id: string
+  task_id: string
+  required_evidence_types: string[]
+  description: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskReport {
+  id: string
+  task_id: string
+  provider_id: string
+  status: 'in_progress' | 'completed_pending_approval' | 'approved'
+  description: string
+  percentage_complete: number
+  last_updated_by: string
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskReportChecklistItem {
+  id: string
+  report_id: string
+  checklist_item_id: string
+  is_completed: boolean
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskEvidenceSubmission {
+  id: string
+  task_id: string
+  provider_id: string
+  evidence_type: 'photo' | 'video' | 'document' | 'signature'
+  attachment_id: string
+  description: string | null
+  submitted_at: string
+  approved_at: string | null
+  approved_by: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface TaskIssue {
+  id: string
+  task_id: string
+  provider_id: string
+  title: string
+  description: string
+  severity: 'low' | 'medium' | 'high' | 'critical'
+  status: 'open' | 'acknowledged' | 'resolved'
+  resolved_at: string | null
+  created_at: string
+  updated_at: string
+}
