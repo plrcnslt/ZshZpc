@@ -69,6 +69,8 @@ const TasksPage: React.FC = () => {
     estimatedTime: "",
     paymentTerms: "",
     budget: "",
+    checklist: [] as string[],
+    evidenceTypes: [] as string[],
   });
 
   // File attachments state
@@ -431,7 +433,7 @@ const TasksPage: React.FC = () => {
     else if (tab === "live-chat") navigate("/tasks/chat");
   };
 
-  const handleFormChange = (field: string, value: string) => {
+  const handleFormChange = (field: string, value: string | string[]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -553,19 +555,65 @@ const TasksPage: React.FC = () => {
 
       if (taskError) throw taskError;
 
-      if (createdTask && fileAttachments.length > 0) {
-        const linkResults = [];
-        for (const attachment of fileAttachments) {
-          const success = await linkToTask(attachment.attachmentId, createdTask.id);
-          linkResults.push({ attachmentId: attachment.attachmentId, success });
-          if (!success) {
-            console.warn(`[handleCreateTask] Failed to link attachment ${attachment.attachmentId}`);
+      if (createdTask) {
+        // Save checklist items if provided
+        if (formData.checklist.length > 0) {
+          const checklistData = {
+            task_id: createdTask.id,
+            title: "Task Checklist",
+            description: "Checklist for task completion",
+            is_required: true,
+          };
+
+          const { data: createdChecklist, error: checklistError } = await supabase
+            .from("task_checklists")
+            .insert([checklistData])
+            .select()
+            .single();
+
+          if (!checklistError && createdChecklist) {
+            // Insert checklist items
+            const checklistItems = formData.checklist
+              .filter((item) => item.trim())
+              .map((item, index) => ({
+                checklist_id: createdChecklist.id,
+                label: item,
+                description: "",
+                display_order: index,
+              }));
+
+            if (checklistItems.length > 0) {
+              await supabase.from("task_checklist_items").insert(checklistItems);
+            }
           }
         }
 
-        const failedCount = linkResults.filter(r => !r.success).length;
-        if (failedCount > 0) {
-          console.error(`[handleCreateTask] ${failedCount}/${fileAttachments.length} attachment links failed`);
+        // Save evidence requirements if provided
+        if (formData.evidenceTypes.length > 0) {
+          const evidenceData = {
+            task_id: createdTask.id,
+            required_evidence_types: formData.evidenceTypes,
+            description: "Required evidence types for task completion",
+          };
+
+          await supabase.from("task_evidence_requirements").insert([evidenceData]);
+        }
+
+        // Link attachments
+        if (fileAttachments.length > 0) {
+          const linkResults = [];
+          for (const attachment of fileAttachments) {
+            const success = await linkToTask(attachment.attachmentId, createdTask.id);
+            linkResults.push({ attachmentId: attachment.attachmentId, success });
+            if (!success) {
+              console.warn(`[handleCreateTask] Failed to link attachment ${attachment.attachmentId}`);
+            }
+          }
+
+          const failedCount = linkResults.filter(r => !r.success).length;
+          if (failedCount > 0) {
+            console.error(`[handleCreateTask] ${failedCount}/${fileAttachments.length} attachment links failed`);
+          }
         }
       }
 
@@ -602,6 +650,8 @@ const TasksPage: React.FC = () => {
         estimatedTime: "",
         paymentTerms: "",
         budget: "",
+        checklist: [],
+        evidenceTypes: [],
       });
       setFileAttachments([]);
       setSelectedComplaint(null);
