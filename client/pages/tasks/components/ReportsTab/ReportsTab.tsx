@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase, Task as TaskType, UserProfile, TaskReport, TaskChecklist, TaskChecklistItem, TaskReportChecklistItem, TaskEvidenceSubmission, TaskIssue, TaskEvidenceRequirement } from "../../../../lib/supabase";
 import { toast } from "../../../../hooks/use-toast";
 import ProviderReportForm from "./ProviderReportForm";
@@ -31,11 +31,13 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
   const [evidenceRequirements, setEvidenceRequirements] = useState<TaskEvidenceRequirement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Determine which tasks to show based on role
-  const relevantTasks =
+  // Determine which tasks to show based on role (memoized to prevent infinite useEffect loops)
+  const relevantTasks = useMemo(() =>
     userRole === "service_provider"
       ? tasks.filter((t) => t.assigned_to === currentUserProfile?.id && t.status === "in_progress")
-      : tasks.filter((t) => t.status === "in_progress");
+      : tasks.filter((t) => t.status === "in_progress"),
+    [tasks, userRole, currentUserProfile?.id]
+  );
 
   // Load data when task selection changes
   useEffect(() => {
