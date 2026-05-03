@@ -252,35 +252,37 @@ export const TodoItem: React.FC<TodoItemProps> = ({
           <p className="text-sm font-semibold text-gray-700 mb-3">
             Task Status
           </p>
-          <div className="flex items-center gap-2">
-            <Select value={status} onValueChange={handleStatusChange} disabled={isUpdating}>
-              <SelectTrigger className="flex-1">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="pending">
-                  <div className="flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-gray-500" />
-                    <span>Pending</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="in_progress">
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-blue-500" />
-                    <span>In Progress</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="completed">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Completed</span>
-                  </div>
-                </SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Select value={status} onValueChange={handleStatusChange} disabled={isUpdating || status === "completed"}>
+                <SelectTrigger className="flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="h-4 w-4 text-gray-500" />
+                      <span>Pending</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="in_progress">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-blue-500" />
+                      <span>In Progress</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
 
-            {isUpdating && (
-              <Loader className="h-4 w-4 animate-spin text-sheraton-gold" />
+              {isUpdating && (
+                <Loader className="h-4 w-4 animate-spin text-sheraton-gold" />
+              )}
+            </div>
+
+            {status !== "completed" && (
+              <p className="text-xs text-gray-500 italic">
+                Once you complete the work, use the Reports tab to submit evidence and request approval from the manager.
+              </p>
             )}
           </div>
         </div>
