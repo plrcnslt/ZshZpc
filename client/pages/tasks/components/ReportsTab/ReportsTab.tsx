@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { supabase, Task as TaskType, UserProfile, TaskReport, TaskChecklist, TaskChecklistItem, TaskReportChecklistItem, TaskEvidenceSubmission, TaskIssue, TaskEvidenceRequirement } from "../../../../lib/supabase";
 import { toast } from "../../../../hooks/use-toast";
 import ProviderReportForm from "./ProviderReportForm";
@@ -31,11 +31,13 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
   const [evidenceRequirements, setEvidenceRequirements] = useState<TaskEvidenceRequirement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Determine which tasks to show based on role
-  const relevantTasks =
+  // Determine which tasks to show based on role (memoized to prevent infinite useEffect loops)
+  const relevantTasks = useMemo(() =>
     userRole === "service_provider"
       ? tasks.filter((t) => t.assigned_to === currentUserProfile?.id && t.status === "in_progress")
-      : tasks.filter((t) => t.status === "in_progress");
+      : tasks.filter((t) => t.status === "in_progress"),
+    [tasks, userRole, currentUserProfile?.id]
+  );
 
   // Load data when task selection changes
   useEffect(() => {
@@ -56,21 +58,21 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
   const loadTaskReportData = async (taskId: string) => {
     setIsLoading(true);
     try {
-      // Load task report
-      const { data: reportData } = await supabase
+      // Load task report (may not exist yet)
+      const { data: reportData, error: reportError } = await supabase
         .from("task_reports")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setTaskReport(reportData);
+      setTaskReport(reportData || null);
 
-      // Load checklist
-      const { data: checklistData } = await supabase
+      // Load checklist (may not exist yet)
+      const { data: checklistData, error: checklistError } = await supabase
         .from("task_checklists")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setChecklist(checklistData);
+      setChecklist(checklistData || null);
 
       if (checklistData) {
         // Load checklist items
@@ -89,6 +91,9 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
             .eq("report_id", reportData.id);
           setReportChecklistItems(reportItemsData || []);
         }
+      } else {
+        setChecklistItems([]);
+        setReportChecklistItems([]);
       }
 
       // Load evidence submissions
@@ -107,20 +112,16 @@ const ReportsTab: React.FC<ReportsTabProps> = ({
         .order("created_at", { ascending: false });
       setIssues(issuesData || []);
 
-      // Load evidence requirements
-      const { data: requirementsData } = await supabase
+      // Load evidence requirements (may not exist yet)
+      const { data: requirementsData, error: requirementsError } = await supabase
         .from("task_evidence_requirements")
         .select("*")
         .eq("task_id", taskId)
         .single();
-      setEvidenceRequirements(requirementsData);
+      setEvidenceRequirements(requirementsData || null);
     } catch (error) {
       console.error("Error loading report data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load report data",
-        variant: "destructive",
-      });
+      // Don't show error toast for missing data - it's expected that reports may not exist yet
     } finally {
       setIsLoading(false);
     }

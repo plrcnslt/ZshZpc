@@ -18,6 +18,8 @@ interface FormData {
   estimatedTime: string;
   paymentTerms: string;
   budget: string;
+  checklist: string[];
+  evidenceTypes: string[];
 }
 
 interface Assignee {
@@ -40,7 +42,7 @@ interface NewTaskTabProps {
   externalVendors: Assignee[];
   onSelectComplaint: (complaint: Complaint) => void;
   onAcceptComplaint: (complaint: Complaint) => void;
-  onFormChange: (field: string, value: string) => void;
+  onFormChange: (field: string, value: string | string[]) => void;
   onAddAttachments: (attachments: FileAttachment[]) => void;
   onRemoveAttachment: (id: string) => void;
   onCreateTask: () => void;

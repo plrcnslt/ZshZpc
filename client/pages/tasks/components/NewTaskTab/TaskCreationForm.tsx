@@ -33,6 +33,12 @@ interface FormData {
   estimatedTime: string;
   paymentTerms: string;
   budget: string;
+  checklist: string[];
+  evidenceTypes: string[];
+}
+
+interface ChecklistItem {
+  text: string;
 }
 
 interface Assignee {
@@ -50,7 +56,7 @@ interface TaskCreationFormProps {
   internalStaff: Assignee[];
   externalVendors: Assignee[];
   isSubmitting: boolean;
-  onFormChange: (field: string, value: string) => void;
+  onFormChange: (field: string, value: string | string[]) => void;
   onAddAttachments: (attachments: FileAttachment[]) => void;
   onRemoveAttachment: (id: string) => void;
   onCreateTask: () => void;
@@ -68,6 +74,32 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
   onRemoveAttachment,
   onCreateTask,
 }) => {
+  const handleAddChecklistItem = () => {
+    const updatedChecklist = [...(formData.checklist || []), ""];
+    onFormChange("checklist", updatedChecklist);
+  };
+
+  const handleChecklistChange = (index: number, value: string) => {
+    const updatedChecklist = [...(formData.checklist || [])];
+    updatedChecklist[index] = value;
+    onFormChange("checklist", updatedChecklist);
+  };
+
+  const handleRemoveChecklistItem = (index: number) => {
+    const updatedChecklist = (formData.checklist || []).filter(
+      (_, i) => i !== index
+    );
+    onFormChange("checklist", updatedChecklist);
+  };
+
+  const handleToggleEvidenceType = (evidenceType: string) => {
+    const currentTypes = formData.evidenceTypes || [];
+    const updatedTypes = currentTypes.includes(evidenceType)
+      ? currentTypes.filter((t) => t !== evidenceType)
+      : [...currentTypes, evidenceType];
+    onFormChange("evidenceTypes", updatedTypes);
+  };
+
   return (
     <Card data-task-form>
       <CardHeader>
@@ -265,6 +297,104 @@ const TaskCreationForm: React.FC<TaskCreationFormProps> = ({
               <p className="text-xs text-muted-foreground">
                 The budget allocated to complete this task
               </p>
+            </div>
+
+            {/* Checklist Section */}
+            <div className="space-y-3 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">
+                  Task Checklist (Optional)
+                </Label>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleAddChecklistItem}
+                  className="text-blue-600 border-blue-300 hover:bg-blue-100"
+                >
+                  <PlusCircle className="h-4 w-4 mr-1" />
+                  Add Item
+                </Button>
+              </div>
+
+              {(formData.checklist || []).length > 0 ? (
+                <div className="space-y-2">
+                  {formData.checklist.map((item, index) => (
+                    <div key={index} className="flex gap-2">
+                      <Input
+                        placeholder={`Checklist item ${index + 1}`}
+                        value={item}
+                        onChange={(e) =>
+                          handleChecklistChange(index, e.target.value)
+                        }
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => handleRemoveChecklistItem(index)}
+                        className="text-red-500 hover:bg-red-50"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-500 italic">
+                  No checklist items yet. Add items to help the service provider
+                  track task completion.
+                </p>
+              )}
+            </div>
+
+            {/* Evidence Requirements Section */}
+            <div className="space-y-3 p-4 bg-green-50 rounded-lg border border-green-200">
+              <Label className="text-base font-semibold">
+                Evidence/Proof Requirements (Optional)
+              </Label>
+              <p className="text-sm text-gray-600">
+                Select what types of evidence the service provider must submit
+                to prove task completion
+              </p>
+
+              <div className="space-y-2">
+                {["photo", "video", "document"].map((evidenceType) => (
+                  <div key={evidenceType} className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id={`evidence-${evidenceType}`}
+                      checked={(formData.evidenceTypes || []).includes(
+                        evidenceType
+                      )}
+                      onChange={() => handleToggleEvidenceType(evidenceType)}
+                      className="w-4 h-4 rounded border-gray-300 text-green-600 cursor-pointer"
+                    />
+                    <Label
+                      htmlFor={`evidence-${evidenceType}`}
+                      className="capitalize cursor-pointer flex-1 font-normal"
+                    >
+                      {evidenceType}
+                      {evidenceType === "photo" && " (images/screenshots)"}
+                      {evidenceType === "video" && " (video recordings)"}
+                      {evidenceType === "document" &&
+                        " (documents/files/signatures)"}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+
+              {(formData.evidenceTypes || []).length > 0 && (
+                <div className="p-2 bg-white rounded border border-green-200">
+                  <p className="text-xs font-semibold text-gray-700">
+                    Required:
+                  </p>
+                  <p className="text-sm text-green-700">
+                    {formData.evidenceTypes.join(", ")}
+                  </p>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">
